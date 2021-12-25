@@ -1,0 +1,67 @@
+---
+title: "Covid-19 Animation"
+author: "Ryan Earl"
+date: "4/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r}
+library(plotly)
+library(htmlwidgets)
+path = "https://raw.githubusercontent.com/Ryan-Earl/geog_data_R/master/cv_19.csv"
+covid = read.csv(path, header = T)
+# create new Date column in correct R format
+covid$newdate <- strptime(as.character(covid$Date), "%m/%d/%Y")
+covid$date_format <- format(covid$newdate, "%Y-%m-%d")
+# define line format
+l = list(color = toRGB('grey'),
+         width = .5
+         )
+# define geographic elements
+g = list(showframe = FALSE,
+         showcoastlines = FALSE,
+         projection = list(type = 'Mercator')
+         )
+# create plotly object, set data source and attributes to be passed to plotly object
+fig <- plot_geo(covid, 
+                frame = ~date_format,
+                colorbar = list(title = 'Infected per Country'),
+                zauto = FALSE,
+                zmin = 0,
+                zmax = 550000
+)
+# define infection data, location, and colors
+fig <- fig %>% add_trace(z = ~Infected,
+                         color = ~Infected,
+                         colors = 'Reds',
+                         text = ~Country,
+                         locations = ~alpha_3,
+                         marker = list(line = l)
+)
+# create title and assign geographic layout
+fig <- fig %>% layout(title = 'Covid-19 Infections by Country <br>Source: <a href="https://github.com/CSSEGISandData/COVID-19">John Hopkins University</a><br><sup>Author: Ryan Earl</sup>',geo = g
+)
+# define animation characteristics
+fig <- fig %>% animation_opts(frame = 400,
+                              transition = 200,
+                              easing = 'linear',
+                              redraw = TRUE
+)
+# create slider for time series
+fig <- fig %>% animation_slider(currentvalue =
+                                list(prefix = "Date: ")
+)
+# plot it
+fig
+htmlwidgets::saveWidget(as_widget(fig), "index.html")
+```
+```{r}
+install.packages('htmlwidgets')
+```
